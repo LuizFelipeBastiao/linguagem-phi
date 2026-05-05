@@ -1,0 +1,385 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */
+options
+{
+  static = true;
+}
+
+PARSER_BEGIN(grammar)
+package compilador;
+
+import java.util.Stack;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.io.InputStream;
+import java.io.FileNotFoundException;
+
+public class grammar
+{
+  public static Stack< HashMap< String, SimboloInfo>> tabelaSimbolos = new Stack< >();
+  private static int nivelEscopo = 0;
+  public static boolean declaracaoMain = false;
+
+  static class SimboloInfo {
+  	String nome;
+  	String tipo;
+  	int escopo;
+  	boolean inicializada;
+
+	SimboloInfo(String nome, String tipo, int escopo) {
+		this.nome = nome;
+		this.tipo = tipo;
+		this.escopo = escopo;
+		this.inicializada = false;
+
+	}
+  }
+
+  private static void entrarEscopo() {
+	tabelaSimbolos.push(new HashMap< >());
+	nivelEscopo++;
+  }
+
+  private static void sairEscopo() {
+	if(!tabelaSimbolos.isEmpty()) {
+		tabelaSimbolos.pop();
+		nivelEscopo--;
+	}
+  }
+
+  private static void declararVariavel(String nome, String tipo) throws ParseException {
+    
+	if(!tabelaSimbolos.isEmpty() && tabelaSimbolos.peek().containsKey(nome)) {
+		throw new Error("Identificador '" + nome +"' ja declarado neste escopo!");
+		
+	}
+
+	SimboloInfo info = new SimboloInfo(nome, tipo, nivelEscopo);
+	tabelaSimbolos.peek().put(nome, info);
+	//System.out.println("Declarada: " + nome +" (tipo: "+ tipo + ", escopo: "+ nivelEscopo + ")");
+	
+
+  }
+
+  private static void verificarVariavel(String nome) throws ParseException{
+	for (int i= tabelaSimbolos.size() - 1; i >= 0; i--) {
+		if(tabelaSimbolos.get(i).containsKey(nome)) {
+			return;
+		}
+	}
+	throw new ParseException("Erro semantico: Variavel '" + nome + "' nao foi declarada!");
+  }
+
+  private static void verificarPropCarac(Token prop, Token car) throws ParseException {
+    if(prop == null | car == null)
+    	return;
+
+    String p = prop.image;
+    String c = car.image;
+    	
+	switch(p) {
+	  	case "assin":
+			if(!(c.equals("main") || c.equals("while") || c.equals("for"))) {
+			    throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c + "'.");
+			}
+			if (c.equals("main")) {
+				if(declaracaoMain) { 
+					throw new Error("Erro semantico: A funcao com assinatura 'main' ja foi declarada.");
+				}
+				declaracaoMain = true;
+			}
+			break;
+		case "tipo" :
+		case "retorna" :
+			if (!(c.equals("inteiro") || c.equals("frac") || c.equals("booleano") || c.equals("car") || c.equals("nada"))) {
+				throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c+ "'.");
+			} break;
+		case "mut" :
+			if (!(c.equals("sim") || c.equals("nao") || c.equals("repetivel"))) {
+				throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c+ "'.");
+			} break;
+		
+		default: break;
+	}
+  }
+
+  
+  
+  public static void main(String args []) throws ParseException, FileNotFoundException
+  {
+    if(args.length < 1) {
+		System.err.println("Erro: Forneca o caminho do arquivo .txt");
+		System.err.println("Uso: java compilador.grammar < entrada.txt >");
+		System.exit(1);
+    }
+
+    try {
+		java.io.FileInputStream arquivo = new java.io.FileInputStream(args[0]);
+        tabelaSimbolos.push(new HashMap< String, SimboloInfo >());
+    
+    	grammar parser = new grammar(arquivo);
+        System.out.println("Lendo arquivo: "+ args[0]);
+        parser.inicio();
+        System.out.println("Ok. Arquivo processado com sucesso.");
+        
+    } catch (FileNotFoundException e) {
+        System.err.println("Erro: Arquivo nao encontrado.");
+    } catch (ParseException e) { 
+        System.err.println("Erro sintatico: "+ e.getMessage());
+    } catch (Error e ) {
+		System.err.println("Erro semantico: "+ e.getMessage());
+    }
+  }
+}
+
+PARSER_END(grammar)
+
+SKIP :
+{
+  " "
+| "\r"
+| "\t"
+| "\n"
+}
+
+TOKEN :
+{
+  < MAIS : "+" >
+| < MENOS : "-" >
+| < MULTIPLICA : "*" >
+| < DIVIDE : "/" >
+| < AND : "&">
+| < OR : "|">
+| < MAIOR: ">">
+| < MENOR: "<">
+| < MAIOR_IGUAL: ">=">
+| < MENOR_IGUAL: "<=">
+| < IGUAL: "==">
+| < DECLARADOR: ":">
+| < ATRIBUICAO: "=">
+| < FIM: ";">
+| < SEPARADOR: ",">
+| < ABREBLOCO: "{">
+| < FECHABLOCO: "}">
+| < ABREPARENT: "(">
+| < FECHAPARENT: ")">
+| < DECLARAVAR: "var">
+| < DECLARAFUNC: "funcao">
+| < DECLARA_DECLARA: "declaracao">
+| < DECLARAESTRUT: "estrutura">
+| < PROP_TIPO: "tipo">
+| < PROP_MUTAVEL: "mut">
+| < PROP_ESCOPO: "escopo">
+| < PROP_ASSINATURA: "assin">
+| < PROP_PARAMETROS: "param">
+| < PROP_RETORNA: "retorna">
+| < PROP_CONDICAO: "condicao">
+| < PROP_ENTAO :"entao" >
+| < TIPO_INT: "inteiro">
+| < TIPO_CHAR: "car">
+| < TIPO_FLOAT: "frac">
+| < TIPO_BOOL: "booleano">
+| < TIPO_VOID: "nada">
+| < VERDADEIRO: "sim">
+| < FALSO: "nao">
+| < VIS_GLOBAL: "global">
+| < VIS_FUNCOES: "funcoes">
+| < VIS_LOOPS: "loops">
+| < ASSIN_MAIN: "main" >
+| < ASSIN_WHILE: "while">
+| < ASSIN_FOR: "for">
+| < VAR_REPETIVEL: "repetivel" >
+| < LOOP_WHILE: "enquanto">
+| < LOOP_FOR: "para">
+
+
+
+}
+
+TOKEN :
+{
+  < ID: (["a"-"z","A"-"Z"]) (["a"-"z","A"-"Z","0"-"9","_"])* >
+| < INTEIRO : ([ "0"-"9" ])+ >
+| < REAL : (["0"-"9"])+ "."(["0"-"9"])+ >
+
+}
+
+int inicio() throws ParseException: {} { (declaracao())* { return 0;} }
+
+Token verdadeiroOuFalso():
+{}
+{
+  < VERDADEIRO > { return token;} |
+  < FALSO >      { return token;}
+}
+
+Token tipo(): {}
+{
+  < TIPO_INT >   { return token;} |
+  < TIPO_CHAR >  { return token;} |
+  < TIPO_FLOAT > { return token;}
+}
+
+Token escopo():
+{}
+{
+  < VIS_GLOBAL> { return token;} |
+  < VIS_LOOPS > { return token;} |
+  < ID > { return token;}
+}
+
+Token tipo_declaracao():
+{ }
+{
+  < DECLARAVAR >      { return token;} |
+  < DECLARAFUNC >     { return token;} |
+  < DECLARA_DECLARA > { return token;} |
+  < LOOP_WHILE >      { return token;} |
+  < LOOP_FOR>         { return token;}
+}
+
+Token declaracao() throws ParseException:
+{
+	Token nomeBloco = null;
+}
+{
+	
+   (nomeBloco = < ID >)?
+   < ABREBLOCO > {
+     if( nomeBloco != null)
+     {
+       entrarEscopo();
+     }else {
+       entrarEscopo();
+     }
+   }
+   (declara() | LOOKAHEAD(2) chamada()| expressao())* < FECHABLOCO > {
+     sairEscopo();
+     return nomeBloco;
+   }
+}
+
+
+void declara():
+{
+	Token nomeVar = null, prop = null, car = null;
+	String tipoVar = "indefinido";
+	boolean declarado = false;
+}
+{
+  tipo_declaracao() < DECLARADOR >
+  (
+    nomeVar = <  ID >  |
+    booleano())
+    (atribuicao())?
+    (< SEPARADOR >
+     prop = propriedades()
+     < DECLARADOR >
+	   car = caracteristica() {
+	     	verificarPropCarac(prop, car);
+	   }
+    )*
+    < FIM >
+    { if (nomeVar != null) {
+      declararVariavel(nomeVar.image, tipoVar);
+      }
+    }
+}
+
+void atribuicao():
+{}
+{
+  < ATRIBUICAO > expressao()
+}
+
+Token propriedades():
+{}
+{
+  < PROP_TIPO >       { return token; } |
+  < PROP_MUTAVEL >    { return token; } |
+  < PROP_RETORNA >    { return token; } |
+  < PROP_ASSINATURA > { return token; } | 
+  < PROP_ESCOPO >     { return token; } |
+  < PROP_PARAMETROS > { return token; } |
+  < PROP_CONDICAO >   { return token; } |
+  < PROP_ENTAO>       { return token; }
+}
+
+Token caracteristica():
+{
+	Token t = null;
+}
+{
+  t = tipo()                                   { return t; } |
+  t = verdadeiroOuFalso()                      { return t; } |
+  t = <	VAR_REPETIVEL  >                       { return t; } |
+  LOOKAHEAD (< FIM > | < SEPARADOR >) escopo() { return t; } |
+  t = declaracao()                             { return t; } |
+  t = assinatura()                             { return t; } |
+  t = booleano()                               { return t; }
+}
+
+Token assinatura():
+{ }
+{
+  < ASSIN_MAIN>  { return token;} |
+  < ASSIN_WHILE> { return token;} |
+  < ASSIN_FOR>   { return token;}
+}
+
+Token booleano():
+{Token t;}
+{
+	(t = < ABREPARENT >) expressao() operador_bool() expressao() (operador_bool() expressao())* < FECHAPARENT>
+	{ return t;}
+}
+
+Token operador_bool():
+{}
+{
+  < IGUAL>       { return token;} |
+  < MAIOR >      { return token;} |
+  < MAIOR_IGUAL> { return token;} |
+  < MENOR >      { return token;} |
+  < MENOR_IGUAL> { return token;} |
+  < OR >         { return token;} |
+  < AND >        { return token;} 
+}
+void expressao():
+{}
+{
+  multiplicacao() ((< MAIS> | < MENOS >) multiplicacao())* 
+}
+
+void multiplicacao():
+{}
+{
+  fator() ((< MULTIPLICA > | < DIVIDE>) fator())*
+}
+
+void fator() throws ParseException:
+{
+	Token id;
+}
+{
+  id = < ID > { try {
+    				verificarVariavel(id.image);
+    			} catch (ParseException e) {
+						throw new Error(e.getMessage());	
+    			  }
+    		  }|
+  < REAL > |
+  < INTEIRO > |
+  < ABREPARENT> (expressao() | < MENOS > fator())< FECHAPARENT>
+}
+
+void chamada() throws ParseException:
+{
+  Token id;
+}
+{
+  id = < ID > { verificarVariavel(id.image);}atribuicao() < FIM >
+}
+
+

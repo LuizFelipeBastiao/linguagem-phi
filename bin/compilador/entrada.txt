@@ -1,0 +1,9 @@
+{
+	funcao: prog, assin: main;
+	funcao: soma;
+}
+prog{
+
+	var: i, tipo: inteiro;
+		
+}
