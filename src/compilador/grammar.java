@@ -9,94 +9,103 @@ import java.io.InputStream;
 import java.io.FileNotFoundException;
 
 public class grammar implements grammarConstants {
-  public static Stack< HashMap< String, SimboloInfo>> tabelaSimbolos = new Stack< >();
-  private static int nivelEscopo = 0;
   public static boolean declaracaoMain = false;
+
+  static class Escopo {
+        String nome;
+        Escopo pai;
+        Map< String, SimboloInfo> simbolos = new HashMap<>();
+
+        Escopo(String nome, Escopo pai) {
+                this.nome = nome;
+                this.pai = pai;
+        }
+  }
 
   static class SimboloInfo {
         String nome;
-        String tipo;
-        int escopo;
-        boolean inicializada;
+        String categoria;
+        Map< String, String> propriedades;
+        Escopo escopo;
 
-        SimboloInfo(String nome, String tipo, int escopo) {
+        SimboloInfo(String nome, String cat,Map< String, String> prop, Escopo escopo) {
                 this.nome = nome;
-                this.tipo = tipo;
+                this.categoria = cat;
+                this.propriedades = prop != null ? prop: new HashMap< >();
                 this.escopo = escopo;
-                this.inicializada = false;
-
-        }
-  }
-
-  private static void entrarEscopo() {
-        tabelaSimbolos.push(new HashMap< >());
-        nivelEscopo++;
-  }
-
-  private static void sairEscopo() {
-        if(!tabelaSimbolos.isEmpty()) {
-                tabelaSimbolos.pop();
-                nivelEscopo--;
-        }
-  }
-
-  private static void declararVariavel(String nome, String tipo) throws ParseException {
-
-        if(!tabelaSimbolos.isEmpty() && tabelaSimbolos.peek().containsKey(nome)) {
-                throw new Error("Identificador '" + nome +"' ja declarado neste escopo!");
-
+                aplicarPadroes();
+                verificarPropCateg(prop);
         }
 
-        SimboloInfo info = new SimboloInfo(nome, tipo, nivelEscopo);
-        tabelaSimbolos.peek().put(nome, info);
-        //System.out.println("Declarada: " + nome +" (tipo: "+ tipo + ", escopo: "+ nivelEscopo + ")");
-
-
-  }
-
-  private static void verificarVariavel(String nome) throws ParseException{
-        for (int i= tabelaSimbolos.size() - 1; i >= 0; i--) {
-                if(tabelaSimbolos.get(i).containsKey(nome)) {
-                        return;
+        private void aplicarPadroes() {
+                if (categoria.equals("var")) {
+                        propriedades.putIfAbsent("mut", "nao");
+                        propriedades.putIfAbsent("tipo", "inteiro");
+                }
+                if(categoria.equals("funcao")) {
+                        propriedades.putIfAbsent("retorna", "nada");
+                        propriedades.putIfAbsent("escopo", "global");
                 }
         }
-        throw new ParseException("Erro semantico: Variavel '" + nome + "' nao foi declarada!");
+
+        private void verificarPropCarac(Map< String, String> prop) throws ParseException {
+        if(prop == null || prop.isEmpty()) {
+                return;
+                }
+
+        for(Map.Entry< String, String> entry: prop.entrySet()) {
+
+            String p = entry.getKey();
+            String c = entry.getValue();
+
+                        switch(p) {
+                                case "assin":
+                                        if(!(c.equals("main") || c.equals("while") || c.equals("for"))) {
+                                        throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c + "'.");
+                                        }
+                                        if (c.equals("main")) {
+                                                if(declaracaoMain) {
+                                                        throw new Error("Erro semantico: A funcao com assinatura 'main' ja foi declarada.");
+                                                }
+                                                declaracaoMain = true;
+                                        }
+                                        break;
+                                case "tipo" :
+                                case "retorna" :
+                                        if (!(c.equals("inteiro") || c.equals("frac") || c.equals("booleano") || c.equals("car") || c.equals("nada"))) {
+                                                throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c+ "'.");
+                                        } break;
+                                case "mut" :
+                                        if (!(c.equals("sim") || c.equals("nao") || c.equals("repetivel"))) {
+                                                throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c+ "'.");
+                                        } break;
+
+                                default: break;
+                        }
+                }
+        }
+
   }
 
-  private static void verificarPropCarac(Token prop, Token car) throws ParseException {
-    if(prop == null | car == null)
-        return;
+  private static void verificarEscopo(String nome, Escopo escopoAtual) {
+        if(escopoAtual.simbolos.containsKey(nome)) {
+                throw new Error("Identificador '" + nome +"' ja declarado no escopo '"+ escopoAtual.nome +"'!");
 
-    String p = prop.image;
-    String c = car.image;
-
-        switch(p) {
-                case "assin":
-                        if(!(c.equals("main") || c.equals("while") || c.equals("for"))) {
-                            throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c + "'.");
-                        }
-                        if (c.equals("main")) {
-                                if(declaracaoMain) {
-                                        throw new Error("Erro semantico: A funcao com assinatura 'main' ja foi declarada.");
-                                }
-                                declaracaoMain = true;
-                        }
-                        break;
-                case "tipo" :
-                case "retorna" :
-                        if (!(c.equals("inteiro") || c.equals("frac") || c.equals("booleano") || c.equals("car") || c.equals("nada"))) {
-                                throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c+ "'.");
-                        } break;
-                case "mut" :
-                        if (!(c.equals("sim") || c.equals("nao") || c.equals("repetivel"))) {
-                                throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c+ "'.");
-                        } break;
-
-                default: break;
         }
   }
 
+  private static void declararAlgo(
+    String nome,
+    String cat,
+    Map<String,String> prop,
+    Escopo escopoAtual
+  )throws ParseException {
 
+        verificarEscopo(nome, escopoAtual);
+
+        SimboloInfo novo = new SimboloInfo(nome, cat, prop, escopoAtual);
+        escopoAtual.simbolos.put(nome, novo);
+  }
 
   public static void main(String args []) throws ParseException, FileNotFoundException
   {
@@ -248,10 +257,11 @@ public class grammar implements grammarConstants {
     throw new Error("Missing return statement in function");
 }
 
-  static final public Token declaracao() throws ParseException, ParseException {Token nomeBloco = null;
+  static final public Token declaracao() throws ParseException, ParseException {Token id = null;
+        String nomeEscopo = new String();
     switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
     case ID:{
-      nomeBloco = jj_consume_token(ID);
+      id = jj_consume_token(ID);
       break;
       }
     default:
@@ -259,11 +269,12 @@ public class grammar implements grammarConstants {
       ;
     }
     jj_consume_token(ABREBLOCO);
-if( nomeBloco != null)
+if( id != null)
      {
-       entrarEscopo();
+       nomeEscopo = "global";
+
      }else {
-       entrarEscopo();
+       nomeEscopo = id.image;
      }
     label_2:
     while (true) {
@@ -315,8 +326,7 @@ if( nomeBloco != null)
       }
     }
     jj_consume_token(FECHABLOCO);
-sairEscopo();
-     {if ("" != null) return nomeBloco;}
+{if ("" != null) return nomeBloco;}
     throw new Error("Missing return statement in function");
 }
 
@@ -717,7 +727,7 @@ verificarVariavel(id.image);
     finally { jj_save(1, xla); }
   }
 
-  static private boolean jj_3R_atribuicao_293_3_8()
+  static private boolean jj_3R_atribuicao_304_3_8()
  {
     if (jj_scan_token(ATRIBUICAO)) return true;
     return false;
@@ -725,7 +735,7 @@ verificarVariavel(id.image);
 
   static private boolean jj_3_1()
  {
-    if (jj_3R_chamada_382_3_7()) return true;
+    if (jj_3R_chamada_393_3_7()) return true;
     return false;
   }
 
@@ -740,10 +750,10 @@ verificarVariavel(id.image);
     return false;
   }
 
-  static private boolean jj_3R_chamada_382_3_7()
+  static private boolean jj_3R_chamada_393_3_7()
  {
     if (jj_scan_token(ID)) return true;
-    if (jj_3R_atribuicao_293_3_8()) return true;
+    if (jj_3R_atribuicao_304_3_8()) return true;
     return false;
   }
 
