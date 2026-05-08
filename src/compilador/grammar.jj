@@ -8,136 +8,153 @@ options
 
 PARSER_BEGIN(grammar)
 package compilador;
-
 import java.util.Stack;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.io.InputStream;
 import java.io.FileNotFoundException;
-
 public class grammar
 {
   public static boolean declaracaoMain = false;
-
-  static class Escopo {
-	String nome;
-	Escopo pai;
-	Map< String, SimboloInfo> simbolos = new HashMap<>();
-
-	Escopo(String nome, Escopo pai) {
-		this.nome = nome;
-		this.pai = pai;
-	}
-  }
-  
-  static class SimboloInfo {
-  	String nome;
-  	String categoria;
-  	Map< String, String> propriedades;
-  	Escopo escopo;
-
-	SimboloInfo(String nome, String cat,Map< String, String> prop, Escopo escopo) {
-		this.nome = nome;
-		this.categoria = cat;
-		this.propriedades = prop != null ? prop: new HashMap< >();
-		this.escopo = escopo;
-		aplicarPadroes();
-		verificarPropCateg(prop);
-	}
-
-	private void aplicarPadroes() {
-		if (categoria.equals("var")) {
-			propriedades.putIfAbsent("mut", "nao");
-			propriedades.putIfAbsent("tipo", "inteiro");
-		}
-		if(categoria.equals("funcao")) {
-			propriedades.putIfAbsent("retorna", "nada");
-			propriedades.putIfAbsent("escopo", "global");
-		}
-	}
-
-	private void verificarPropCarac(Map< String, String> prop) throws ParseException {
-    	if(prop == null || prop.isEmpty()) { 
-    		return;
-		}
-
-    	for(Map.Entry< String, String> entry: prop.entrySet()) {
-
-    	    String p = entry.getKey();
-    	    String c = entry.getValue();
-    	
-			switch(p) {
-	  			case "assin":
-					if(!(c.equals("main") || c.equals("while") || c.equals("for"))) {
-			    		throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c + "'.");
-					}
-					if (c.equals("main")) {
-						if(declaracaoMain) { 
-							throw new Error("Erro semantico: A funcao com assinatura 'main' ja foi declarada.");
-						}
-						declaracaoMain = true;
-					}
-					break;
-				case "tipo" :
-				case "retorna" :
-					if (!(c.equals("inteiro") || c.equals("frac") || c.equals("booleano") || c.equals("car") || c.equals("nada"))) {
-						throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c+ "'.");
-					} break;
-				case "mut" :
-					if (!(c.equals("sim") || c.equals("nao") || c.equals("repetivel"))) {
-						throw new Error("A propriedade '"+ p + "' nao aceita o valor '"+ c+ "'.");
-					} break;
-		
-				default: break;
-			}
-  		}
-  	}
-  	
+  static class Escopo
+  {
+	    String nome;
+	    Escopo pai;
+	    HashMap < String, SimboloInfo > simbolos = new HashMap < > ();
+	    Escopo(String nome, Escopo pai)
+    {
+		      this.nome = nome;
+		      this.pai = pai;
+	    }
   }
 
-  private static void verificarEscopo(String nome, Escopo escopoAtual) {
-	if(escopoAtual.simbolos.containsKey(nome)) {
-		throw new Error("Identificador '" + nome +"' ja declarado no escopo '"+ escopoAtual.nome +"'!");
-		
-	}
+  static class SimboloInfo
+  {
+	    String nome;
+	    String categoria;
+	    HashMap < String, String > propriedades;
+	    Escopo escopo;
+	    SimboloInfo(String nome, String cat, HashMap < String, String > prop, Escopo escopo)
+    {
+		      this.nome = nome;
+		      this.categoria = cat;
+		      this.propriedades = prop != null ? prop : new HashMap < > ();
+		      this.escopo = escopo;
+		      aplicarPadroes();
+		      try { 
+			      verificarPropCarac(prop);
+			  } catch (ParseException e ) {
+					e.printStackTrace();
+			    }
+	    }
+
+	    private void aplicarPadroes()
+    {
+		      if (categoria.equals("var"))
+      {
+			        propriedades.putIfAbsent("mut", "nao");
+			        propriedades.putIfAbsent("tipo", "inteiro");
+		      }
+		      if (categoria.equals("funcao"))
+      {
+			        propriedades.putIfAbsent("retorna", "nada");
+			        propriedades.putIfAbsent("escopo", "global");
+		      }
+	    }
+
+	    private void verificarPropCarac(HashMap < String, String > prop) throws ParseException
+    {
+	      if (prop == null || prop.isEmpty())
+      {
+		        return;
+		      }
+	      for (HashMap.Entry < String, String > entry : prop.entrySet())
+      {
+	        String p = entry.getKey();
+	        String c = entry.getValue();
+				        switch (p)
+        {
+				          case "assin" : 
+					          if (!(c.equals("main") || c.equals("while") || c.equals("for")))
+          {
+					            throw new Error("A propriedade '" + p + "' nao aceita o valor '" + c + "'.");
+					          }
+					          if (c.equals("main"))
+          {
+						            if (declaracaoMain)
+            {
+							              throw new Error("Erro semantico: A funcao com assinatura 'main' ja foi declarada.");
+						            }
+						            declaracaoMain = true;
+					          }
+					          break;
+				          case "tipo" : 
+				          case "retorna" : 
+					          if (!(c.equals("inteiro") || c.equals("frac") || c.equals("booleano") || c.equals("car") || c.equals("nada")))
+          {
+						            throw new Error("A propriedade '" + p + "' nao aceita o valor '" + c + "'.");
+					          }
+          break;
+				          case "mut" : 
+					          if (!(c.equals("sim") || c.equals("nao") || c.equals("repetivel")))
+          {
+						            throw new Error("A propriedade '" + p + "' nao aceita o valor '" + c + "'.");
+					          }
+          break;
+						          default : break;
+			        }
+		      }
+	    }
+	  }
+
+  private static void verificarEscopo(String nome, Escopo escopoAtual)
+  {
+	    if (escopoAtual.simbolos.containsKey(nome))
+    {
+		      throw new Error("Identificador '" + nome + "' ja declarado no escopo '" + escopoAtual.nome + "'!");
+			    }
   }
 
   private static void declararAlgo(
-    String nome,
-    String cat,
-    Map<String,String> prop,
-    Escopo escopoAtual
-  )throws ParseException {
-    
-	verificarEscopo(nome, escopoAtual);
-
-	SimboloInfo novo = new SimboloInfo(nome, cat, prop, escopoAtual);
-	escopoAtual.simbolos.put(nome, novo);
+  String nome, 
+  String cat, 
+  HashMap < String, String > prop, 
+  Escopo escopoAtual
+  ) throws ParseException
+  {
+	    verificarEscopo(nome, escopoAtual);
+	    SimboloInfo novo = new SimboloInfo(nome, cat, prop, escopoAtual);
+	    escopoAtual.simbolos.put(nome, novo);
   }
 
   public static void main(String args []) throws ParseException, FileNotFoundException
   {
-    if(args.length < 1) {
-		System.err.println("Erro: Forneca o caminho do arquivo .txt");
-		System.err.println("Uso: java compilador.grammar < entrada.txt >");
-		System.exit(1);
+    if (args.length < 1)
+    {
+		      System.err.println("Erro: Forneca o caminho do arquivo .txt");
+		      System.err.println("Uso: java compilador.grammar < entrada.txt >");
+		      System.exit(1);
     }
-
-    try {
-		java.io.FileInputStream arquivo = new java.io.FileInputStream(args[0]);
-        tabelaSimbolos.push(new HashMap< String, SimboloInfo >());
-    
-    	grammar parser = new grammar(arquivo);
-        System.out.println("Lendo arquivo: "+ args[0]);
-        parser.inicio();
-        System.out.println("Ok. Arquivo processado com sucesso.");
-        
-    } catch (FileNotFoundException e) {
-        System.err.println("Erro: Arquivo nao encontrado.");
-    } catch (ParseException e) { 
-        System.err.println("Erro sintatico: "+ e.getMessage());
-    } catch (Error e ) {
-		System.err.println("Erro semantico: "+ e.getMessage());
+    try
+    {
+		      java.io.FileInputStream arquivo = new java.io.FileInputStream(args [0]);
+      tabelaSimbolos.push(new HashMap < String, SimboloInfo > ());
+	      grammar parser = new grammar(arquivo);
+      System.out.println("Lendo arquivo: " + args [0]);
+      parser.inicio();
+      System.out.println("Ok. Arquivo processado com sucesso.");
+    }
+    catch (FileNotFoundException e)
+    {
+      System.err.println("Erro: Arquivo nao encontrado.");
+    }
+    catch (ParseException e)
+    {
+      System.err.println("Erro sintatico: " + e.getMessage());
+    }
+    catch (Error e)
+    {
+		      System.err.println("Erro semantico: " + e.getMessage());
     }
   }
 }
@@ -158,239 +175,443 @@ TOKEN :
 | < MENOS : "-" >
 | < MULTIPLICA : "*" >
 | < DIVIDE : "/" >
-| < AND : "&">
-| < OR : "|">
-| < MAIOR: ">">
-| < MENOR: "<">
-| < MAIOR_IGUAL: ">=">
-| < MENOR_IGUAL: "<=">
-| < IGUAL: "==">
-| < DECLARADOR: ":">
-| < ATRIBUICAO: "=">
-| < FIM: ";">
-| < SEPARADOR: ",">
-| < ABREBLOCO: "{">
-| < FECHABLOCO: "}">
-| < ABREPARENT: "(">
-| < FECHAPARENT: ")">
-| < DECLARAVAR: "var">
-| < DECLARAFUNC: "funcao">
-| < DECLARA_DECLARA: "declaracao">
-| < DECLARAESTRUT: "estrutura">
-| < PROP_TIPO: "tipo">
-| < PROP_MUTAVEL: "mut">
-| < PROP_ESCOPO: "escopo">
-| < PROP_ASSINATURA: "assin">
-| < PROP_PARAMETROS: "param">
-| < PROP_RETORNA: "retorna">
-| < PROP_CONDICAO: "condicao">
-| < PROP_ENTAO :"entao" >
-| < TIPO_INT: "inteiro">
-| < TIPO_CHAR: "car">
-| < TIPO_FLOAT: "frac">
-| < TIPO_BOOL: "booleano">
-| < TIPO_VOID: "nada">
-| < VERDADEIRO: "sim">
-| < FALSO: "nao">
-| < VIS_GLOBAL: "global">
-| < VIS_FUNCOES: "funcoes">
-| < VIS_LOOPS: "loops">
-| < ASSIN_MAIN: "main" >
-| < ASSIN_WHILE: "while">
-| < ASSIN_FOR: "for">
-| < VAR_REPETIVEL: "repetivel" >
-| < LOOP_WHILE: "enquanto">
-| < LOOP_FOR: "para">
-
-
-
+| < AND : "&" >
+| < OR : "|" >
+| < MAIOR : ">" >
+| < MENOR : "<" >
+| < MAIOR_IGUAL : ">=" >
+| < MENOR_IGUAL : "<=" >
+| < IGUAL : "==" >
+| < DECLARADOR : ":" >
+| < ATRIBUICAO : "=" >
+| < FIM : ";" >
+| < SEPARADOR : "," >
+| < ABREBLOCO : "{" >
+| < FECHABLOCO : "}" >
+| < ABREPARENT : "(" >
+| < FECHAPARENT : ")" >
+| < DECLARAVAR : "var" >
+| < DECLARAFUNC : "funcao" >
+| < DECLARA_DECLARA : "declaracao" >
+| < DECLARAESTRUT : "estrutura" >
+| < PROP_TIPO : "tipo" >
+| < PROP_MUTAVEL : "mut" >
+| < PROP_ESCOPO : "escopo" >
+| < PROP_ASSINATURA : "assin" >
+| < PROP_PARAMETROS : "param" >
+| < PROP_RETORNA : "retorna" >
+| < PROP_CONDICAO : "condicao" >
+| < PROP_ENTAO : "entao" >
+| < TIPO_INT : "inteiro" >
+| < TIPO_CHAR : "car" >
+| < TIPO_FLOAT : "frac" >
+| < TIPO_BOOL : "booleano" >
+| < TIPO_VOID : "nada" >
+| < VERDADEIRO : "sim" >
+| < FALSO : "nao" >
+| < VIS_GLOBAL : "global" >
+| < VIS_FUNCOES : "funcoes" >
+| < VIS_LOOPS : "loops" >
+| < ASSIN_MAIN : "main" >
+| < ASSIN_WHILE : "while" >
+| < ASSIN_FOR : "for" >
+| < VAR_REPETIVEL : "repetivel" >
+| < LOOP_WHILE : "enquanto" >
+| < LOOP_FOR : "para" >
 }
 
 TOKEN :
 {
-  < ID: (["a"-"z","A"-"Z"]) (["a"-"z","A"-"Z","0"-"9","_"])* >
+  < ID : ([ "a"-"z", "A"-"Z" ]) ([ "a"-"z", "A"-"Z", "0"-"9", "_" ])* >
 | < INTEIRO : ([ "0"-"9" ])+ >
-| < REAL : (["0"-"9"])+ "."(["0"-"9"])+ >
-
+| < REAL : ([ "0"-"9" ])+ "." ([ "0"-"9" ])+ >
 }
 
-int inicio() throws ParseException: {} { (declaracao())* { return 0;} }
-
-Token verdadeiroOuFalso():
+int inicio() throws ParseException :
 {}
 {
-  < VERDADEIRO > { return token;} |
-  < FALSO >      { return token;}
-}
-
-Token tipo(): {}
-{
-  < TIPO_INT >   { return token;} |
-  < TIPO_CHAR >  { return token;} |
-  < TIPO_FLOAT > { return token;}
-}
-
-Token escopo():
-{}
-{
-  < VIS_GLOBAL> { return token;} |
-  < VIS_LOOPS > { return token;} |
-  < ID > { return token;}
-}
-
-Token tipo_declaracao():
-{ }
-{
-  < DECLARAVAR >      { return token;} |
-  < DECLARAFUNC >     { return token;} |
-  < DECLARA_DECLARA > { return token;} |
-  < LOOP_WHILE >      { return token;} |
-  < LOOP_FOR>         { return token;}
-}
-
-Token declaracao() throws ParseException:
-{
-	Token id = null;
-	String nomeEscopo = new String();
-}
-{
-	
-   (id = < ID >)?
-   < ABREBLOCO > {
-     if( id != null)
-     {
-       nomeEscopo = "global";
-       
-     }else {
-       nomeEscopo = id.image;
-     }
-   }
-   (declara() | LOOKAHEAD(2) chamada()| expressao())* < FECHABLOCO > {
-     
-     return nomeBloco;
-   }
-}
-
-
-void declara():
-{
-	Token nomeVar = null, prop = null, car = null;
-	String tipoVar = "indefinido";
-	boolean declarado = false;
-}
-{
-  tipo_declaracao() < DECLARADOR >
   (
-    nomeVar = <  ID >  |
-    booleano())
-    (atribuicao())?
-    (< SEPARADOR >
-     prop = propriedades()
-     < DECLARADOR >
-	   car = caracteristica() {
-	     	verificarPropCarac(prop, car);
-	   }
-    )*
-    < FIM >
-    { if (nomeVar != null) {
-      declararVariavel(nomeVar.image, tipoVar);
-      }
-    }
+    declaracao()
+  )*
+  {
+    return 0;
+  }
 }
 
-void atribuicao():
+Token verdadeiroOuFalso() :
+{}
+{
+  < VERDADEIRO >
+  {
+    return token;
+  }
+| 
+  < FALSO >
+  {
+    return token;
+  }
+}
+
+Token tipo() :
+{}
+{
+  < TIPO_INT >
+  {
+    return token;
+  }
+| 
+  < TIPO_CHAR >
+  {
+    return token;
+  }
+| 
+  < TIPO_FLOAT >
+  {
+    return token;
+  }
+}
+
+Token escopo() :
+{}
+{
+  < VIS_GLOBAL >
+  {
+    return token;
+  }
+| 
+  < VIS_LOOPS >
+  {
+    return token;
+  }
+| 
+  < ID >
+  {
+    return token;
+  }
+}
+
+Token tipo_declaracao() :
+{}
+{
+  < DECLARAVAR >
+  {
+    return token;
+  }
+| 
+  < DECLARAFUNC >
+  {
+    return token;
+  }
+| 
+  < DECLARA_DECLARA >
+  {
+    return token;
+  }
+| 
+  < LOOP_WHILE >
+  {
+    return token;
+  }
+| 
+  < LOOP_FOR >
+  {
+    return token;
+  }
+}
+
+Token declaracao() throws ParseException :
+{
+	  Token id = null;
+	  String nomeEscopo = new String();
+}
+{
+	  (id = < ID >)? 
+  < ABREBLOCO >
+  {
+    if (id != null)
+    {
+      nomeEscopo = "global";
+    }
+    else
+    {
+      nomeEscopo = id.image;
+    }
+  }
+  (
+    declara()
+  | LOOKAHEAD(2)
+    chamada()
+  | expressao()
+  )*
+  < FECHABLOCO >
+  {
+    return nomeBloco;
+  }
+}
+
+void declara() :
+{
+	  Token cat_token = null;
+	  Token nome_token = null;
+	  Token prop_token = null;
+	  Token car_token = null;
+}
+{
+  cat_token = tipo_declaracao() 
+  < DECLARADOR >
+  (
+    nome_token = < ID >
+  | booleano()
+  )
+  (
+    atribuicao()
+  )?
+  (
+    < SEPARADOR > 
+    prop_token = propriedades() 
+    < DECLARADOR > 
+	    car_token = caracteristica()
+    {
+	      verificarPropCarac(prop, car);
+	    }
+  )*
+  < FIM >
+  {
+    if (nomeVar != null)
+    {
+      declararVariavel(nomeVar.image, tipoVar);
+    }
+  }
+}
+
+void atribuicao() :
 {}
 {
   < ATRIBUICAO > expressao()
 }
 
-Token propriedades():
+Token propriedades() :
 {}
 {
-  < PROP_TIPO >       { return token; } |
-  < PROP_MUTAVEL >    { return token; } |
-  < PROP_RETORNA >    { return token; } |
-  < PROP_ASSINATURA > { return token; } | 
-  < PROP_ESCOPO >     { return token; } |
-  < PROP_PARAMETROS > { return token; } |
-  < PROP_CONDICAO >   { return token; } |
-  < PROP_ENTAO>       { return token; }
+  < PROP_TIPO >
+  {
+    return token;
+  }
+| 
+  < PROP_MUTAVEL >
+  {
+    return token;
+  }
+| 
+  < PROP_RETORNA >
+  {
+    return token;
+  }
+| 
+  < PROP_ASSINATURA >
+  {
+    return token;
+  }
+| 
+  < PROP_ESCOPO >
+  {
+    return token;
+  }
+| 
+  < PROP_PARAMETROS >
+  {
+    return token;
+  }
+| 
+  < PROP_CONDICAO >
+  {
+    return token;
+  }
+| 
+  < PROP_ENTAO >
+  {
+    return token;
+  }
 }
 
-Token caracteristica():
+Token caracteristica() :
 {
-	Token t = null;
+	  Token t = null;
 }
 {
-  t = tipo()                                   { return t; } |
-  t = verdadeiroOuFalso()                      { return t; } |
-  t = <	VAR_REPETIVEL  >                       { return t; } |
-  LOOKAHEAD (< FIM > | < SEPARADOR >) escopo() { return t; } |
-  t = declaracao()                             { return t; } |
-  t = assinatura()                             { return t; } |
-  t = booleano()                               { return t; }
+  t = tipo()
+  {
+    return t;
+  }
+| 
+  t = verdadeiroOuFalso()
+  {
+    return t;
+  }
+| 
+  t = < 	VAR_REPETIVEL >
+  {
+    return t;
+  }
+| 
+  LOOKAHEAD(< FIM > | < SEPARADOR >)
+  escopo()
+  {
+    return t;
+  }
+| 
+  t = declaracao()
+  {
+    return t;
+  }
+| 
+  t = assinatura()
+  {
+    return t;
+  }
+| 
+  t = booleano()
+  {
+    return t;
+  }
 }
 
-Token assinatura():
-{ }
-{
-  < ASSIN_MAIN>  { return token;} |
-  < ASSIN_WHILE> { return token;} |
-  < ASSIN_FOR>   { return token;}
-}
-
-Token booleano():
-{Token t;}
-{
-	(t = < ABREPARENT >) expressao() operador_bool() expressao() (operador_bool() expressao())* < FECHAPARENT>
-	{ return t;}
-}
-
-Token operador_bool():
+Token assinatura() :
 {}
 {
-  < IGUAL>       { return token;} |
-  < MAIOR >      { return token;} |
-  < MAIOR_IGUAL> { return token;} |
-  < MENOR >      { return token;} |
-  < MENOR_IGUAL> { return token;} |
-  < OR >         { return token;} |
-  < AND >        { return token;} 
+  < ASSIN_MAIN >
+  {
+    return token;
+  }
+| 
+  < ASSIN_WHILE >
+  {
+    return token;
+  }
+| 
+  < ASSIN_FOR >
+  {
+    return token;
+  }
 }
-void expressao():
+
+Token booleano() :
+{
+  Token t;
+}
+{
+	  (t = < ABREPARENT >) expressao() operador_bool() expressao()
+  (
+    operador_bool() expressao()
+  )*
+  < FECHAPARENT >
+	  {
+    return t;
+  }
+}
+
+Token operador_bool() :
 {}
 {
-  multiplicacao() ((< MAIS> | < MENOS >) multiplicacao())* 
+  < IGUAL >
+  {
+    return token;
+  }
+| 
+  < MAIOR >
+  {
+    return token;
+  }
+| 
+  < MAIOR_IGUAL >
+  {
+    return token;
+  }
+| 
+  < MENOR >
+  {
+    return token;
+  }
+| 
+  < MENOR_IGUAL >
+  {
+    return token;
+  }
+| 
+  < OR >
+  {
+    return token;
+  }
+| 
+  < AND >
+  {
+    return token;
+  }
 }
 
-void multiplicacao():
+void expressao() :
 {}
 {
-  fator() ((< MULTIPLICA > | < DIVIDE>) fator())*
+  multiplicacao()
+  (
+    (
+      < MAIS >
+    | < MENOS >
+    )
+    multiplicacao()
+  )*
 }
 
-void fator() throws ParseException:
+void multiplicacao() :
+{}
 {
-	Token id;
-}
-{
-  id = < ID > { try {
-    				verificarVariavel(id.image);
-    			} catch (ParseException e) {
-						throw new Error(e.getMessage());	
-    			  }
-    		  }|
-  < REAL > |
-  < INTEIRO > |
-  < ABREPARENT> (expressao() | < MENOS > fator())< FECHAPARENT>
+  fator()
+  (
+    (
+      < MULTIPLICA >
+    | < DIVIDE >
+    )
+    fator()
+  )*
 }
 
-void chamada() throws ParseException:
+void fator() throws ParseException :
+{
+	  Token id;
+}
+{
+  id = < ID >
+  {
+    try
+    {
+				      verificarVariavel(id.image);
+			    }
+    catch (ParseException e)
+    {
+						      throw new Error(e.getMessage());	
+			    }
+		  }
+| 
+  < REAL >
+| 
+  < INTEIRO >
+| 
+  < ABREPARENT >
+  (
+    expressao()
+  | < MENOS > fator()
+  )
+  < FECHAPARENT >
+}
+
+void chamada() throws ParseException :
 {
   Token id;
 }
 {
-  id = < ID > { verificarVariavel(id.image);}atribuicao() < FIM >
+  id = < ID >
+  {
+    verificarVariavel(id.image);
+  }
+  atribuicao() < FIM >
 }
-
-
